@@ -530,6 +530,71 @@
     /* =============================================
        RESPONSIVE
     ============================================= */
+    /* =============================================
+       SUGGESTION CARD
+    ============================================= */
+    .suggestion-card {
+      width: 100%;
+      max-width: 680px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--gray-900);
+      border: 1px solid var(--gray-700);
+      border-radius: 14px;
+      padding: 14px 20px;
+      animation: fadeUp 0.85s 0.45s ease both;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .suggestion-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, #ffffff 0%, #555555 100%);
+      border-radius: 3px 0 0 3px;
+    }
+    .suggestion-card:hover {
+      border-color: var(--gray-500, #666);
+      background: var(--gray-800);
+    }
+    .suggestion-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      opacity: 0.75;
+    }
+    .suggestion-body { flex: 1; }
+    .suggestion-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--gray-400);
+      margin-bottom: 3px;
+    }
+    .suggestion-text {
+      font-size: 0.88rem;
+      color: var(--gray-200);
+      font-weight: 400;
+    }
+    .suggestion-text strong {
+      color: var(--white);
+      font-weight: 500;
+    }
+    .suggestion-arrow {
+      font-size: 14px;
+      color: var(--gray-600);
+      flex-shrink: 0;
+      transition: transform 0.2s, color 0.2s;
+    }
+    .suggestion-card:hover .suggestion-arrow {
+      transform: translateX(3px);
+      color: var(--gray-300);
+    }
+
     @media (max-width: 600px) {
       .page { padding: 40px 12px 24px; }
       .chat-wrapper { height: 520px; border-radius: 14px; }
@@ -559,6 +624,16 @@
     </p>
   </header>
 
+  <!-- ======= SUGGESTION CARD ======= -->
+  <div class="suggestion-card" onclick="injectSuggestion()">
+    <span class="suggestion-icon">💬</span>
+    <div class="suggestion-body">
+      <div class="suggestion-label">Prueba preguntar</div>
+      <div class="suggestion-text">¿Qué me puedes contar sobre el <strong>Proyecto Living de Barranco</strong>?</div>
+    </div>
+    <span class="suggestion-arrow">→</span>
+  </div>
+
   <!-- ======= CHAT ======= -->
   <div class="chat-wrapper">
 
@@ -576,14 +651,6 @@
 
     <!-- Messages -->
     <div class="chat-messages" id="chatMessages">
-      <!-- Welcome message -->
-      <div class="msg agent">
-        <div class="bubble">
-          👋 ¡Hola! Soy tu agente inmobiliario con IA. Puedo ayudarte a buscar propiedades, resolver dudas sobre financiamiento, o guiarte en el proceso de compra y renta. ¿Cómo puedo asistirte hoy?
-        </div>
-        <span class="msg-time" id="welcomeTime"></span>
-      </div>
-
       <!-- Typing indicator -->
       <div class="typing-indicator" id="typingIndicator">
         <div class="typing-dot"></div>
@@ -653,12 +720,14 @@
   let pendingFiles  = []; // { type: 'audio'|'doc', file, name, dataUrl }
 
   // =============================================
-  // INIT
+  // INJECT SUGGESTION INTO INPUT
   // =============================================
-  document.addEventListener('DOMContentLoaded', () => {
-    const t = document.getElementById('welcomeTime');
-    if (t) t.textContent = formatTime(new Date());
-  });
+  function injectSuggestion() {
+    const input = document.getElementById('messageInput');
+    input.value = '¿Qué me puedes contar sobre el Proyecto Living de Barranco?';
+    autoResize(input);
+    input.focus();
+  }
 
   // =============================================
   // HELPERS
