@@ -1181,6 +1181,7 @@ async function _doFetch(text, files) {
 
   const payload = {
     sessionId: getSessionId(),
+    messageId: crypto.randomUUID(),
     message:   text || '',
     timestamp: new Date().toISOString(),
     files:     filesPayload
