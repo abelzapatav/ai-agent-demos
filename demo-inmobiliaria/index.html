@@ -641,7 +641,7 @@
   <div class="suggestion-card" onclick="injectSuggestion()">
     <span class="suggestion-icon">🏠</span>
     <div class="suggestion-body">
-      <div class="suggestion-label">Prueba preguntar</div>
+      <div class="suggestion-label">👆 Toca aquí para comenzar</div>
       <div class="suggestion-text">¿Qué me puedes contar sobre el <strong>Proyecto Living de Barranco</strong>?</div>
     </div>
     <span class="suggestion-arrow">→</span>
@@ -723,7 +723,7 @@
     const input = document.getElementById('messageInput');
     input.value = '¿Qué me puedes contar sobre el Proyecto Living de Barranco?';
     autoResize(input);
-    input.focus();
+    sendMessage();
   }
 
   // =============================================
@@ -843,17 +843,34 @@
       let reply = '';
       const ct  = res.headers.get('content-type') || '';
 
-      if (ct.includes('application/json')) {
+if (ct.includes('application/json')) {
         const data = await res.json();
-        reply = data.output || data.message || data.response || data.text
-               || (Array.isArray(data) && data[0]?.output)
-               || JSON.stringify(data);
+
+        // ✅ Manejo de chunks: muestra mensaje por mensaje
+        if (data.chunks && Array.isArray(data.chunks) && data.chunks.length > 0) {
+          removeAgentTyping();
+          data.chunks.forEach((chunk, index) => {
+            setTimeout(() => {
+              appendAgentTyping();
+              setTimeout(() => {
+                removeAgentTyping();
+                appendMessage('agent', chunk, 'text');
+              }, 800);
+            }, index * 2000);
+          });
+        } else {
+          reply = data.output || data.message || data.response || data.text
+                 || (Array.isArray(data) && data[0]?.output)
+                 || JSON.stringify(data);
+          removeAgentTyping();
+          appendMessage('agent', reply || '...', 'text');
+        }
+
       } else {
         reply = await res.text();
+        removeAgentTyping();
+        appendMessage('agent', reply || '...', 'text');
       }
-
-      removeAgentTyping();
-      appendMessage('agent', reply || '...', 'text');
     } catch (err) {
       removeAgentTyping();
       appendMessage('agent', `⚠️ No se pudo conectar con el servidor. Revisa la URL del webhook.\n(${err.message})`, 'text');
