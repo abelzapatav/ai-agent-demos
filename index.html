@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demos · Agentes de IA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* =============================================
+       BASE & VARIABLES
+    ============================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:    #0a0a0a;
+      --gray-900: #111111;
+      --gray-800: #1c1c1c;
+      --gray-700: #2a2a2a;
+      --gray-600: #3f3f3f;
+      --gray-400: #888888;
+      --gray-300: #b0b0b0;
+      --gray-200: #d4d4d4;
+      --gray-100: #f0f0f0;
+      --white:    #ffffff;
+      --font-display: 'Playfair Display', serif;
+      --font-body:    'DM Sans', sans-serif;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--black);
+      color: var(--white);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+    }
+
+    /* =============================================
+       BACKGROUND
+    ============================================= */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(
+          -45deg,
+          rgba(255,255,255,0.012) 0px,
+          rgba(255,255,255,0.012) 1px,
+          transparent 1px,
+          transparent 12px
+        );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: -120px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 700px;
+      height: 500px;
+      background: radial-gradient(ellipse at center, rgba(255,255,255,0.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* =============================================
+       CORNER ORNAMENTS
+    ============================================= */
+    .corner {
+      position: fixed;
+      width: 80px; height: 80px;
+      pointer-events: none;
+      opacity: 0.1;
+      z-index: 1;
+    }
+    .corner-tl { top: 24px; left: 24px; border-top: 1px solid #fff; border-left: 1px solid #fff; }
+    .corner-br { bottom: 24px; right: 24px; border-bottom: 1px solid #fff; border-right: 1px solid #fff; }
+
+    /* =============================================
+       PAGE LAYOUT
+    ============================================= */
+    .page {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 24px 60px;
+    }
+
+    /* =============================================
+       HEADER
+    ============================================= */
+    .header {
+      text-align: center;
+      max-width: 720px;
+      margin-bottom: 64px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--gray-700);
+      background: var(--gray-900);
+      border-radius: 100px;
+      padding: 6px 18px;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gray-300);
+      margin-bottom: 28px;
+      animation: fadeDown 0.7s ease both;
+    }
+
+    .badge-dot {
+      width: 6px; height: 6px;
+      background: var(--white);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    .header h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.4rem, 5vw, 4rem);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      animation: fadeUp 0.8s 0.1s ease both;
+      color: var(--white);
+    }
+
+    .header h1 .line-one {
+      display: block;
+      background: linear-gradient(135deg, #ffffff 0%, #888888 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header h1 .line-two {
+      display: block;
+      font-style: italic;
+      background: linear-gradient(135deg, #d8d0c4 0%, #ffffff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      position: relative;
+    }
+
+    .header h1 .line-two::after {
+      content: '';
+      position: absolute;
+      bottom: 2px; left: 0;
+      width: 100%; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      animation: shimmer 3s 1.2s infinite;
+    }
+
+    @keyframes shimmer {
+      0%   { opacity: 0; transform: scaleX(0); }
+      20%  { opacity: 1; transform: scaleX(1); }
+      80%  { opacity: 1; transform: scaleX(1); }
+      100% { opacity: 0; transform: scaleX(0); }
+    }
+
+    .divider {
+      width: 48px;
+      height: 1px;
+      background: var(--gray-600);
+      margin: 24px auto;
+      animation: fadeIn 1s 0.3s ease both;
+    }
+
+    .header p {
+      font-size: 0.95rem;
+      line-height: 1.75;
+      color: var(--gray-400);
+      font-weight: 300;
+      max-width: 520px;
+      margin: 0 auto;
+      animation: fadeUp 0.8s 0.3s ease both;
+    }
+
+    /* =============================================
+       DEMO GRID
+    ============================================= */
+    .demo-grid {
+      width: 100%;
+      max-width: 960px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      animation: fadeUp 0.9s 0.5s ease both;
+    }
+
+    /* =============================================
+       DEMO CARD
+    ============================================= */
+    .demo-card {
+      background: var(--gray-900);
+      border: 1px solid var(--gray-700);
+      border-radius: 20px;
+      padding: 32px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+    }
+
+    /* Top accent line */
+    .demo-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    /* Glow on hover */
+    .demo-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 65%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .demo-card:hover {
+      border-color: var(--gray-500, #555);
+      transform: translateY(-4px);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+    }
+
+    .demo-card:hover::before,
+    .demo-card:hover::after { opacity: 1; }
+
+    /* Emoji icon */
+    .card-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      background: var(--gray-800);
+      border: 1px solid var(--gray-700);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+      transition: background 0.25s;
+    }
+
+    .demo-card:hover .card-icon {
+      background: var(--gray-700);
+    }
+
+    /* Card body */
+    .card-body { flex: 1; }
+
+    .card-tag {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--gray-400);
+      margin-bottom: 8px;
+    }
+
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--white);
+      margin-bottom: 10px;
+    }
+
+    .card-desc {
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: var(--gray-400);
+      font-weight: 300;
+    }
+
+    /* Card footer */
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 16px;
+      border-top: 1px solid var(--gray-700);
+    }
+
+    .card-cta {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--gray-300);
+      letter-spacing: 0.04em;
+      transition: color 0.2s;
+    }
+
+    .demo-card:hover .card-cta { color: var(--white); }
+
+    .card-arrow {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--gray-700);
+      border: 1px solid var(--gray-600);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gray-300);
+      font-size: 12px;
+      transition: background 0.2s, color 0.2s, transform 0.2s;
+    }
+
+    .demo-card:hover .card-arrow {
+      background: var(--white);
+      color: var(--black);
+      transform: translateX(2px);
+    }
+
+    /* =============================================
+       FOOTER
+    ============================================= */
+    .footer {
+      margin-top: 52px;
+      font-size: 0.72rem;
+      color: var(--gray-600);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      animation: fadeIn 1s 1s ease both;
+    }
+
+    /* =============================================
+       KEYFRAMES
+    ============================================= */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* =============================================
+       RESPONSIVE
+    ============================================= */
+    @media (max-width: 860px) {
+      .demo-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page { padding: 40px 16px 48px; }
+      .demo-grid {
+        grid-template-columns: 1fr;
+      }
+      .header h1 { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-br"></div>
+
+  <div class="page">
+
+    <!-- ======= HEADER ======= -->
+    <header class="header">
+      <div class="badge">
+        <span class="badge-dot"></span>
+        Demos disponibles
+      </div>
+      <h1>
+        <span class="line-one">Agentes de IA</span>
+        <span class="line-two">para tu industria</span>
+      </h1>
+      <div class="divider"></div>
+      <p>
+        Explora nuestras demos interactivas. Cada agente está diseñado para
+        un rubro específico y conectado en tiempo real mediante inteligencia artificial.
+      </p>
+    </header>
+
+    <!-- ======= DEMO GRID ======= -->
+    <main class="demo-grid">
+
+      <!-- Card: Inmobiliaria -->
+      <a class="demo-card" href="agente-inmobiliaria.html">
+        <div class="card-icon">🏠</div>
+        <div class="card-body">
+          <div class="card-tag">Demo · Sector inmobiliario</div>
+          <div class="card-title">Agente Inmobiliario</div>
+          <div class="card-desc">
+            Consulta proyectos, precios, disponibilidad y resuelve dudas sobre compra o renta de propiedades.
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-cta">Probar demo</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <!-- Card: Carnes -->
+      <a class="demo-card" href="agente-carnes.html">
+        <div class="card-icon">🥩</div>
+        <div class="card-body">
+          <div class="card-tag">Demo · Venta de carnes</div>
+          <div class="card-title">Asesor de Carnes</div>
+          <div class="card-desc">
+            Explora el catálogo de cortes, consulta precios y realiza pedidos directamente desde el chat.
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-cta">Probar demo</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <!-- Card: Belleza -->
+      <a class="demo-card" href="agente-belleza.html">
+        <div class="card-icon">💅</div>
+        <div class="card-body">
+          <div class="card-tag">Demo · Belleza & Estética</div>
+          <div class="card-title">Asistente de Belleza</div>
+          <div class="card-desc">
+            Conoce los servicios disponibles, precios y agenda tu cita con un asistente inteligente.
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="card-cta">Probar demo</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+    </main>
+
+    <footer class="footer">Powered by IA · Demos de Prueba</footer>
+
+  </div>
+
+</body>
+</html>
