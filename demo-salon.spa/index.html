@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agente de IA · Salones de Belleza</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* =============================================
+       BASE & VARIABLES
+    ============================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #0a0a0a;
+      --gray-900: #111111;
+      --gray-800: #1c1c1c;
+      --gray-700: #2a2a2a;
+      --gray-600: #3f3f3f;
+      --gray-400: #888888;
+      --gray-300: #b0b0b0;
+      --gray-200: #d4d4d4;
+      --gray-100: #f0f0f0;
+      --white: #ffffff;
+      --font-display: 'Playfair Display', serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--black);
+      color: var(--white);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+    }
+
+    /* =============================================
+       BACKGROUND — subtle diagonal grain
+    ============================================= */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(
+          -45deg,
+          rgba(255,255,255,0.012) 0px,
+          rgba(255,255,255,0.012) 1px,
+          transparent 1px,
+          transparent 12px
+        );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* subtle radial glow in top center */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -120px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 400px;
+      background: radial-gradient(ellipse at center, rgba(255,255,255,0.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* =============================================
+       PAGE LAYOUT
+    ============================================= */
+    .page {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 24px 40px;
+    }
+
+    /* =============================================
+       HEADER
+    ============================================= */
+    .header {
+      text-align: center;
+      max-width: 720px;
+      margin-bottom: 44px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--gray-700);
+      background: var(--gray-900);
+      border-radius: 100px;
+      padding: 6px 18px;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gray-300);
+      margin-bottom: 28px;
+      animation: fadeDown 0.7s ease both;
+    }
+
+    .badge-dot {
+      width: 6px; height: 6px;
+      background: var(--white);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    .header h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.4rem, 5vw, 4rem);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      animation: fadeUp 0.8s 0.1s ease both;
+      color: var(--white);
+    }
+
+    .header h1 .line-one {
+      display: block;
+      background: linear-gradient(135deg, #ffffff 0%, #888888 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header h1 .line-two {
+      display: block;
+      font-style: italic;
+      background: linear-gradient(135deg, #d8d0c4 0%, #ffffff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      position: relative;
+    }
+
+    .header h1 .line-two::after {
+      content: '';
+      position: absolute;
+      bottom: 2px; left: 0;
+      width: 100%; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      animation: shimmer 3s 1.2s infinite;
+    }
+    @keyframes shimmer {
+      0%   { opacity: 0; transform: scaleX(0); }
+      20%  { opacity: 1; transform: scaleX(1); }
+      80%  { opacity: 1; transform: scaleX(1); }
+      100% { opacity: 0; transform: scaleX(0); }
+    }
+
+    .divider {
+      width: 48px;
+      height: 1px;
+      background: var(--gray-600);
+      margin: 24px auto;
+      animation: fadeIn 1s 0.3s ease both;
+    }
+
+    .header p {
+      font-size: 0.95rem;
+      line-height: 1.75;
+      color: var(--gray-400);
+      font-weight: 300;
+      max-width: 560px;
+      margin: 0 auto;
+      animation: fadeUp 0.8s 0.3s ease both;
+    }
+
+    /* =============================================
+       SUGGESTION CARD
+    ============================================= */
+    .suggestion-card {
+      width: 100%;
+      max-width: 680px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--gray-900);
+      border: 1px solid var(--gray-700);
+      border-radius: 14px;
+      padding: 14px 20px;
+      animation: fadeUp 0.85s 0.45s ease both;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .suggestion-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, #ffffff 0%, #555555 100%);
+      border-radius: 3px 0 0 3px;
+    }
+    .suggestion-card:hover {
+      border-color: #666;
+      background: var(--gray-800);
+    }
+    .suggestion-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      opacity: 0.75;
+    }
+    .suggestion-body { flex: 1; }
+    .suggestion-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--gray-400);
+      margin-bottom: 3px;
+    }
+    .suggestion-text {
+      font-size: 0.88rem;
+      color: var(--gray-200);
+      font-weight: 400;
+    }
+    .suggestion-text strong {
+      color: var(--white);
+      font-weight: 500;
+    }
+    .suggestion-arrow {
+      font-size: 14px;
+      color: var(--gray-600);
+      flex-shrink: 0;
+      transition: transform 0.2s, color 0.2s;
+    }
+    .suggestion-card:hover .suggestion-arrow {
+      transform: translateX(3px);
+      color: var(--gray-300);
+    }
+
+    /* =============================================
+       CHAT CONTAINER
+    ============================================= */
+    .chat-wrapper {
+      width: 100%;
+      max-width: 680px;
+      background: var(--gray-900);
+      border: 1px solid var(--gray-700);
+      border-radius: 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 600px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
+      animation: fadeUp 0.9s 0.5s ease both;
+    }
+
+    /* Chat Header */
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 22px;
+      background: var(--gray-800);
+      border-bottom: 1px solid var(--gray-700);
+      flex-shrink: 0;
+    }
+
+    .chat-avatar {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gray-600), var(--gray-800));
+      border: 1px solid var(--gray-600);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .chat-header-info { flex: 1; }
+    .chat-header-name {
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 0.95rem;
+      color: var(--white);
+    }
+    .chat-header-status {
+      font-size: 0.75rem;
+      color: var(--gray-400);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 2px;
+    }
+    .status-dot {
+      width: 6px; height: 6px;
+      background: #6adb6a;
+      border-radius: 50%;
+      animation: pulse 2.5s infinite;
+    }
+
+    /* Messages Area */
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scroll-behavior: smooth;
+    }
+
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-track { background: transparent; }
+    .chat-messages::-webkit-scrollbar-thumb { background: var(--gray-700); border-radius: 2px; }
+
+    /* Message Bubbles */
+    .msg {
+      max-width: 75%;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      animation: msgIn 0.3s ease both;
+    }
+
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg.agent { align-self: flex-start; }
+    .msg.user  { align-self: flex-end; }
+
+    .bubble {
+      padding: 11px 16px;
+      border-radius: 16px;
+      font-size: 0.88rem;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+
+    .msg.agent .bubble {
+      background: var(--gray-800);
+      border: 1px solid var(--gray-700);
+      color: var(--gray-100);
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg.user .bubble {
+      background: var(--gray-700);
+      border: 1px solid var(--gray-600);
+      color: var(--white);
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg-time {
+      font-size: 0.68rem;
+      color: var(--gray-600);
+      padding: 0 4px;
+    }
+    .msg.user .msg-time { text-align: right; }
+
+    /* File bubble */
+    .bubble-file {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border-radius: 16px;
+      background: var(--gray-800);
+      border: 1px solid var(--gray-700);
+      cursor: pointer;
+    }
+    .msg.user .bubble-file {
+      background: var(--gray-700);
+      border-color: var(--gray-600);
+    }
+    .file-icon { font-size: 22px; flex-shrink: 0; }
+    .file-info { flex: 1; overflow: hidden; }
+    .file-name { font-size: 0.82rem; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-size { font-size: 0.7rem; color: var(--gray-400); margin-top: 2px; }
+
+    /* Audio bubble */
+    .bubble-audio {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border-radius: 16px;
+      background: var(--gray-800);
+      border: 1px solid var(--gray-700);
+      min-width: 200px;
+    }
+    .msg.user .bubble-audio {
+      background: var(--gray-700);
+      border-color: var(--gray-600);
+    }
+    .audio-play-btn {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--gray-600);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--white);
+      font-size: 12px;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .audio-play-btn:hover { background: #555; }
+    .audio-waveform {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      height: 24px;
+    }
+    .waveform-bar {
+      flex: 1;
+      background: #555;
+      border-radius: 2px;
+      min-height: 4px;
+    }
+    .audio-dur { font-size: 0.7rem; color: var(--gray-400); white-space: nowrap; }
+
+    /* Typing indicator */
+    .typing-indicator {
+      align-self: flex-start;
+      display: none;
+      align-items: center;
+      gap: 5px;
+      padding: 12px 16px;
+      background: var(--gray-800);
+      border: 1px solid var(--gray-700);
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+    }
+    .typing-indicator.active { display: flex; }
+    .typing-dot {
+      width: 7px; height: 7px;
+      background: var(--gray-400);
+      border-radius: 50%;
+      animation: typingBounce 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30%           { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* =============================================
+       INPUT AREA
+    ============================================= */
+    .chat-input-area {
+      padding: 14px 16px;
+      background: var(--gray-800);
+      border-top: 1px solid var(--gray-700);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .file-preview-strip { display: none; gap: 8px; flex-wrap: wrap; }
+    .file-preview-strip.active { display: flex; }
+    .file-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--gray-700);
+      border: 1px solid var(--gray-600);
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 0.75rem;
+      color: var(--gray-200);
+      max-width: 200px;
+    }
+    .file-chip span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-chip-remove { cursor: pointer; color: var(--gray-400); font-size: 14px; flex-shrink: 0; line-height: 1; }
+    .file-chip-remove:hover { color: var(--white); }
+
+    .input-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .input-actions { display: flex; gap: 6px; flex-shrink: 0; padding-bottom: 4px; }
+
+    .action-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--gray-700);
+      border: 1px solid var(--gray-600);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gray-300);
+      font-size: 16px;
+      transition: background 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    .action-btn:hover { background: var(--gray-600); color: var(--white); }
+    .action-btn.recording {
+      background: #3a1a1a;
+      border-color: #cc4444;
+      color: #ff5555;
+      animation: recordPulse 1s infinite;
+    }
+    @keyframes recordPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(200,50,50,0.4); }
+      50%       { box-shadow: 0 0 0 6px rgba(200,50,50,0); }
+    }
+
+    .text-input-wrap { flex: 1; }
+
+    #messageInput {
+      width: 100%;
+      background: var(--gray-700);
+      border: 1px solid var(--gray-600);
+      border-radius: 20px;
+      padding: 10px 18px;
+      color: var(--white);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      resize: none;
+      max-height: 100px;
+      min-height: 40px;
+      outline: none;
+      line-height: 1.5;
+      transition: border-color 0.2s;
+    }
+    #messageInput::placeholder { color: var(--gray-600); }
+    #messageInput:focus { border-color: var(--gray-400); }
+
+    .send-btn {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      background: var(--white);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--black);
+      font-size: 16px;
+      transition: transform 0.15s, background 0.2s;
+      flex-shrink: 0;
+    }
+    .send-btn:hover { background: var(--gray-200); transform: scale(1.08); }
+    .send-btn:active { transform: scale(0.95); }
+    .send-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+    #audioFileInput, #docFileInput { display: none; }
+
+    /* =============================================
+       FOOTER
+    ============================================= */
+    .footer {
+      margin-top: 32px;
+      font-size: 0.72rem;
+      color: var(--gray-600);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      animation: fadeIn 1s 1s ease both;
+    }
+
+    /* =============================================
+       KEYFRAMES
+    ============================================= */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* =============================================
+       CORNER ORNAMENTS
+    ============================================= */
+    .corner {
+      position: fixed;
+      width: 80px; height: 80px;
+      pointer-events: none;
+      opacity: 0.1;
+    }
+    .corner-tl { top: 24px; left: 24px; border-top: 1px solid #fff; border-left: 1px solid #fff; }
+    .corner-br { bottom: 24px; right: 24px; border-bottom: 1px solid #fff; border-right: 1px solid #fff; }
+
+    /* =============================================
+       RESPONSIVE
+    ============================================= */
+    @media (max-width: 600px) {
+      .page { padding: 40px 12px 24px; }
+      .chat-wrapper { height: 520px; border-radius: 14px; }
+      .header h1 { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="corner corner-tl"></div>
+<div class="corner corner-br"></div>
+
+<div class="page">
+
+  <!-- ======= HEADER ======= -->
+  <header class="header">
+    <div class="badge">
+      <span class="badge-dot"></span>
+      Demo en vivo
+    </div>
+    <h1>
+      <span class="line-one">Agente de IA</span>
+      <span class="line-two">para Salones de Belleza y Spa</span>
+    </h1>
+    <div class="divider"></div>
+    <p>
+      Estás viendo una <strong style="color:var(--gray-200);font-weight:500;">demo de prueba</strong> de nuestro asistente inteligente.
+      Escríbele como lo harías con una recepcionista real: puedes consultar servicios, precios, disponibilidad o agendar tu cita directamente.
+    </p>
+  </header>
+
+  <!-- ======= SUGGESTION CARD ======= -->
+  <div class="suggestion-card" onclick="injectSuggestion()">
+    <span class="suggestion-icon">💅</span>
+    <div class="suggestion-body">
+      <div class="suggestion-label">Prueba preguntar</div>
+      <div class="suggestion-text">¿Cuáles son los <strong>servicios que ofrecen</strong> y cuáles son sus precios?</div>
+    </div>
+    <span class="suggestion-arrow">→</span>
+  </div>
+
+  <!-- ======= CHAT ======= -->
+  <div class="chat-wrapper">
+
+    <div class="chat-header">
+      <div class="chat-avatar">💅</div>
+      <div class="chat-header-info">
+        <div class="chat-header-name">Asistente de Belleza IA</div>
+        <div class="chat-header-status">
+          <span class="status-dot"></span>
+          En línea · disponible ahora
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+      <div class="typing-indicator" id="typingIndicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <div class="file-preview-strip" id="filePreviewStrip"></div>
+      <div class="input-row">
+        <div class="input-actions">
+          <button class="action-btn" title="Adjuntar documento" onclick="document.getElementById('docFileInput').click()">📎</button>
+          <button class="action-btn" id="audioBtn" title="Grabar audio" onclick="toggleRecording()">🎤</button>
+        </div>
+        <div class="text-input-wrap">
+          <textarea
+            id="messageInput"
+            placeholder="Escribe un mensaje..."
+            rows="1"
+            oninput="autoResize(this)"
+            onkeydown="handleKey(event)"
+          ></textarea>
+        </div>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Enviar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="audioFileInput" accept="audio/*" onchange="handleAudioFile(event)" />
+  <input type="file" id="docFileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg" multiple onchange="handleDocFile(event)" />
+
+  <footer class="footer">Powered by IA · Demo de Prueba</footer>
+</div>
+
+<script>
+  // =============================================
+  // ⚙️  WEBHOOK CONFIGURATION
+  //     Reemplaza esta URL con tu webhook de N8n
+  // =============================================
+  const WEBHOOK_URL = "https://TU-WEBHOOK-N8N-AQUI.com/webhook/chat";
+
+  // =============================================
+  // STATE
+  // =============================================
+  let isRecording   = false;
+  let mediaRecorder = null;
+  let audioChunks   = [];
+  let pendingFiles  = [];
+
+  // =============================================
+  // SUGGESTION INJECT
+  // =============================================
+  function injectSuggestion() {
+    const input = document.getElementById('messageInput');
+    input.value = '¿Cuáles son los servicios que ofrecen y cuáles son sus precios?';
+    autoResize(input);
+    input.focus();
+  }
+
+  // =============================================
+  // HELPERS
+  // =============================================
+  function formatTime(d) {
+    return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function scrollToBottom() {
+    const msgs = document.getElementById('chatMessages');
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  // =============================================
+  // APPEND MESSAGES
+  // =============================================
+  function appendMessage(role, content, type = 'text', meta = {}) {
+    const container = document.getElementById('chatMessages');
+    const typing    = document.getElementById('typingIndicator');
+
+    const wrap = document.createElement('div');
+    wrap.className = `msg ${role}`;
+
+    let bubbleHTML = '';
+
+    if (type === 'text') {
+      bubbleHTML = `<div class="bubble">${escapeHtml(content)}</div>`;
+    } else if (type === 'doc') {
+      const icon = getFileIcon(meta.name || 'archivo');
+      const size = meta.size ? formatBytes(meta.size) : '';
+      bubbleHTML = `
+        <div class="bubble-file">
+          <span class="file-icon">${icon}</span>
+          <div class="file-info">
+            <div class="file-name">${escapeHtml(meta.name || 'archivo')}</div>
+            <div class="file-size">${size}</div>
+          </div>
+        </div>`;
+    } else if (type === 'audio') {
+      const dur  = meta.duration ? formatDuration(meta.duration) : '0:10';
+      const bars = Array.from({ length: 24 }, () => {
+        const h = Math.floor(Math.random() * 18) + 4;
+        return `<div class="waveform-bar" style="height:${h}px"></div>`;
+      }).join('');
+      bubbleHTML = `
+        <div class="bubble-audio">
+          <button class="audio-play-btn" onclick="playAudio(this,'${meta.dataUrl || ''}')">▶</button>
+          <div class="audio-waveform">${bars}</div>
+          <span class="audio-dur">${dur}</span>
+        </div>`;
+    }
+
+    const time = document.createElement('span');
+    time.className = 'msg-time';
+    time.textContent = formatTime(new Date());
+
+    wrap.innerHTML = bubbleHTML;
+    wrap.appendChild(time);
+    container.insertBefore(wrap, typing);
+    scrollToBottom();
+  }
+
+  function appendAgentTyping() {
+    document.getElementById('typingIndicator').classList.add('active');
+    scrollToBottom();
+  }
+  function removeAgentTyping() {
+    document.getElementById('typingIndicator').classList.remove('active');
+  }
+
+  // =============================================
+  // SEND MESSAGE
+  // =============================================
+  async function sendMessage() {
+    const input    = document.getElementById('messageInput');
+    const text     = input.value.trim();
+    const hasFiles = pendingFiles.length > 0;
+
+    if (!text && !hasFiles) return;
+
+    if (text) appendMessage('user', text, 'text');
+    pendingFiles.forEach(f => {
+      if (f.type === 'audio') {
+        appendMessage('user', '', 'audio', { dataUrl: f.dataUrl, duration: f.duration, name: f.name });
+      } else {
+        appendMessage('user', '', 'doc', { name: f.name, size: f.size });
+      }
+    });
+
+    input.value = '';
+    input.style.height = 'auto';
+    clearFilePreview();
+    appendAgentTyping();
+
+    const payload = new FormData();
+    if (text) payload.append('message', text);
+    payload.append('timestamp', new Date().toISOString());
+    pendingFiles.forEach((f, i) => {
+      if (f.file) payload.append(`file_${i}`, f.file, f.name);
+    });
+
+    try {
+      const res = await fetch(WEBHOOK_URL, { method: 'POST', body: payload });
+      let reply = '';
+      const ct  = res.headers.get('content-type') || '';
+
+      if (ct.includes('application/json')) {
+        const data = await res.json();
+        reply = data.output || data.message || data.response || data.text
+               || (Array.isArray(data) && data[0]?.output)
+               || JSON.stringify(data);
+      } else {
+        reply = await res.text();
+      }
+
+      removeAgentTyping();
+      appendMessage('agent', reply || '...', 'text');
+    } catch (err) {
+      removeAgentTyping();
+      appendMessage('agent', `⚠️ No se pudo conectar con el servidor. Revisa la URL del webhook.\n(${err.message})`, 'text');
+    } finally {
+      pendingFiles = [];
+    }
+  }
+
+  // =============================================
+  // FILE HANDLING
+  // =============================================
+  function handleDocFile(e) {
+    Array.from(e.target.files).forEach(file => {
+      pendingFiles.push({ type: 'doc', file, name: file.name, size: file.size });
+    });
+    renderFilePreview();
+    e.target.value = '';
+  }
+
+  function handleAudioFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      pendingFiles.push({ type: 'audio', file, name: file.name, size: file.size, dataUrl: ev.target.result });
+      renderFilePreview();
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }
+
+  function renderFilePreview() {
+    const strip = document.getElementById('filePreviewStrip');
+    strip.innerHTML = '';
+    if (!pendingFiles.length) { strip.classList.remove('active'); return; }
+    strip.classList.add('active');
+    pendingFiles.forEach((f, i) => {
+      const chip = document.createElement('div');
+      chip.className = 'file-chip';
+      const icon = f.type === 'audio' ? '🎵' : getFileIcon(f.name);
+      chip.innerHTML = `<span>${icon}</span><span>${escapeHtml(f.name)}</span><span class="file-chip-remove" onclick="removeFile(${i})">✕</span>`;
+      strip.appendChild(chip);
+    });
+  }
+
+  function removeFile(i) { pendingFiles.splice(i, 1); renderFilePreview(); }
+  function clearFilePreview() { pendingFiles = []; renderFilePreview(); }
+
+  // =============================================
+  // AUDIO RECORDING
+  // =============================================
+  async function toggleRecording() {
+    const btn = document.getElementById('audioBtn');
+    if (!isRecording) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder  = new MediaRecorder(stream);
+        audioChunks    = [];
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          const name = `audio_${Date.now()}.webm`;
+          const file = new File([blob], name, { type: 'audio/webm' });
+          const reader = new FileReader();
+          reader.onload = ev => {
+            pendingFiles.push({ type: 'audio', file, name, size: blob.size, dataUrl: ev.target.result });
+            renderFilePreview();
+          };
+          reader.readAsDataURL(blob);
+          stream.getTracks().forEach(t => t.stop());
+        };
+        mediaRecorder.start();
+        isRecording = true;
+        btn.classList.add('recording');
+        btn.title       = 'Detener grabación';
+        btn.textContent = '⏹';
+      } catch (err) {
+        alert('No se pudo acceder al micrófono: ' + err.message);
+      }
+    } else {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+      isRecording = false;
+      btn.classList.remove('recording');
+      btn.title       = 'Grabar audio';
+      btn.textContent = '🎤';
+    }
+  }
+
+  // =============================================
+  // PLAY AUDIO
+  // =============================================
+  function playAudio(btn, dataUrl) {
+    if (!dataUrl) return;
+    const audio = new Audio(dataUrl);
+    audio.play();
+    btn.textContent = '⏸';
+    audio.onended = () => { btn.textContent = '▶'; };
+  }
+
+  // =============================================
+  // UTILS
+  // =============================================
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+      .replace(/\n/g,'<br>');
+  }
+  function formatBytes(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+    return (b/1048576).toFixed(1) + ' MB';
+  }
+  function formatDuration(s) {
+    return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+  }
+  function getFileIcon(name) {
+    const ext = name.split('.').pop().toLowerCase();
+    return { pdf:'📄', doc:'📝', docx:'📝', xls:'📊', xlsx:'📊',
+             txt:'📃', png:'🖼', jpg:'🖼', jpeg:'🖼',
+             mp3:'🎵', mp4:'🎬', wav:'🎵', webm:'🎵' }[ext] || '📁';
+  }
+</script>
+</body>
+</html>
