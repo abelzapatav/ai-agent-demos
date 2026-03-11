@@ -989,7 +989,6 @@ async function sendMessage() {
   input.value = '';
   input.style.height = 'auto';
   clearFilePreview();
-  appendAgentTyping();
   await _doFetch(text, snapshot);
 }
 
@@ -1101,7 +1100,6 @@ function sendFromRecording() {
     _hideRecordingUI();
 
     appendMessage('user', '', 'audio', { dataUrl, duration, name });
-    appendAgentTyping();
     await _doFetch('', [{ type: 'audio', file, name, size: blob.size, dataUrl, duration }]);
   };
 }
@@ -1195,11 +1193,15 @@ async function _doFetch(text, files) {
     });
 
     const ct = res.headers.get('content-type') || '';
+    const rawText = await res.text();
+
+    // n8n aún en buffer → respuesta vacía, ignorar silenciosamente
+    if (!rawText || !rawText.trim()) return;
 
     if (ct.includes('application/json')) {
-      const data = await res.json();
+      const data = JSON.parse(rawText);
       if (data.chunks && Array.isArray(data.chunks) && data.chunks.length > 0) {
-        removeAgentTyping();
+        appendAgentTyping();
         data.chunks.forEach((chunk, index) => {
           setTimeout(() => {
             appendAgentTyping();
@@ -1213,13 +1215,18 @@ async function _doFetch(text, files) {
         const reply = data.output || data.message || data.response || data.text
                     || (Array.isArray(data) && data[0]?.output)
                     || JSON.stringify(data);
-        removeAgentTyping();
-        appendMessage('agent', reply || '...', 'text');
+        appendAgentTyping();
+        setTimeout(() => {
+          removeAgentTyping();
+          appendMessage('agent', reply || '...', 'text');
+        }, 800);
       }
     } else {
-      const reply = await res.text();
-      removeAgentTyping();
-      appendMessage('agent', reply || '...', 'text');
+      appendAgentTyping();
+      setTimeout(() => {
+        removeAgentTyping();
+        appendMessage('agent', rawText || '...', 'text');
+      }, 800);
     }
   } catch (err) {
     removeAgentTyping();
