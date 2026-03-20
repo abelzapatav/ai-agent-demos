@@ -611,6 +611,104 @@
       .chat-wrapper { height: 520px; border-radius: 14px; }
       .header h1 { font-size: 2rem; }
     }
+    /* =============================================
+   RECORDING ROW
+============================================= */
+.recording-row {
+  display: none;
+  align-items: center;
+  gap: 10px;
+}
+.recording-row.active { display: flex; }
+
+.cancel-rec-btn {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: rgba(200, 60, 60, 0.12);
+  border: 1px solid rgba(200, 60, 60, 0.35);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff7a7a;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.cancel-rec-btn:hover { background: rgba(200, 60, 60, 0.28); }
+
+.recording-viz-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--gray-700);
+  border: 1px solid rgba(200, 60, 60, 0.4);
+  border-radius: 20px;
+  padding: 0 14px;
+  height: 40px;
+  overflow: hidden;
+  position: relative;
+}
+.recording-viz-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: rgba(200, 60, 60, 0.05);
+  animation: recGlow 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes recGlow {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 1; }
+}
+
+.viz-bars {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 28px;
+  position: relative;
+  z-index: 1;
+}
+.viz-bar {
+  flex: 1;
+  background: #ff7a7a;
+  border-radius: 2px;
+  height: 4px;
+  min-height: 3px;
+  max-height: 24px;
+  will-change: height, opacity;
+}
+
+.rec-dot {
+  width: 8px; height: 8px;
+  background: #ff4444;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: recDotBlink 1s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+}
+@keyframes recDotBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+
+.recording-timer {
+  font-size: 0.8rem;
+  color: #ff9090;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-weight: 500;
+  position: relative;
+  z-index: 1;
+}
   </style>
 </head>
 <body>
@@ -641,8 +739,8 @@
   <div class="suggestion-card" onclick="injectSuggestion()">
     <span class="suggestion-icon">🥩</span>
     <div class="suggestion-body">
-      <div class="suggestion-label">Prueba preguntar</div>
-      <div class="suggestion-text">¿Me puedes mostrar el <strong>catálogo de productos</strong> disponibles?</div>
+      <div class="suggestion-label">👆 Toca aquí para comenzar</div>
+      <div class="suggestion-text">¿Me puedes mostrar el <strong>catálogo productos</strong> disponibles?</div>
     </div>
     <span class="suggestion-arrow">→</span>
   </div>
@@ -671,10 +769,10 @@
 
     <div class="chat-input-area">
       <div class="file-preview-strip" id="filePreviewStrip"></div>
-      <div class="input-row">
+      <div class="input-row" id="inputRow">
         <div class="input-actions">
           <button class="action-btn" title="Adjuntar documento" onclick="document.getElementById('docFileInput').click()">📎</button>
-          <button class="action-btn" id="audioBtn" title="Grabar audio" onclick="toggleRecording()">🎤</button>
+          <button class="action-btn" id="audioBtn" title="Grabar audio" onclick="startRecording()">🎤</button>
         </div>
         <div class="text-input-wrap">
           <textarea
@@ -692,10 +790,31 @@
           </svg>
         </button>
       </div>
+
+      <!-- ── Recording row (replaces input row while recording) ── -->
+      <div class="recording-row" id="recordingRow">
+        <!-- Cancel button -->
+        <button class="cancel-rec-btn" title="Cancelar grabación" onclick="cancelRecording()">✕</button>
+
+        <!-- Visualizer + timer -->
+        <div class="recording-viz-wrap">
+          <span class="rec-dot"></span>
+          <div class="viz-bars" id="vizBars"></div>
+          <span class="recording-timer" id="recordingTimer">0:00</span>
+        </div>
+
+        <!-- Stop + Send -->
+        <button class="send-btn" onclick="sendFromRecording()" title="Detener y enviar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+
     </div>
   </div>
 
-  <input type="file" id="audioFileInput" accept="audio/*" onchange="handleAudioFile(event)" />
   <input type="file" id="docFileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg" multiple onchange="handleDocFile(event)" />
 
   <footer class="footer">Powered by IA · Demo de Prueba</footer>
@@ -706,276 +825,490 @@
   // ⚙️  WEBHOOK CONFIGURATION
   //     Reemplaza esta URL con tu webhook de N8n
   // =============================================
-  const WEBHOOK_URL = "https://wwebhookw.omegaconsultingai.com/webhook/demo_web_carnes";
+const WEBHOOK_URL = "https://wwebhookw.omegaconsultingai.com/webhook/demo_web_carnes";
 
-  // =============================================
-  // STATE
-  // =============================================
-  let isRecording   = false;
-  let mediaRecorder = null;
-  let audioChunks   = [];
-  let pendingFiles  = [];
-
-  // =============================================
-  // SUGGESTION INJECT
-  // =============================================
-  function injectSuggestion() {
-    const input = document.getElementById('messageInput');
-    input.value = '¿Me puedes mostrar el catálogo de productos disponibles?';
-    autoResize(input);
-    input.focus();
-  }
-
-  // =============================================
-  // HELPERS
-  // =============================================
-  function formatTime(d) {
-    return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-  }
-
-  function autoResize(el) {
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 100) + 'px';
-  }
-
-  function handleKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+// =============================================
+// 🔑  SESSION ID  (UUID v4 · persiste en localStorage)
+// =============================================
+function getSessionId() {
+  const KEY = 'inmo_chat_session_id';
+  let id = localStorage.getItem(KEY);
+  if (!id) {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      id = crypto.randomUUID();
+    } else {
+      id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = (crypto.getRandomValues(new Uint8Array(1))[0] % 16);
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+      });
     }
+    localStorage.setItem(KEY, id);
   }
+  return id;
+}
 
-  function scrollToBottom() {
-    const msgs = document.getElementById('chatMessages');
-    msgs.scrollTop = msgs.scrollHeight;
-  }
+// =============================================
+// STATE
+// =============================================
+let pendingFiles        = [];
+let isRecording         = false;
+let mediaRecorder       = null;
+let audioChunks         = [];
+let currentStream       = null;
+let audioCtx            = null;
+let analyserNode        = null;
+let animFrameId         = null;
+let recordingStartTime  = null;
+let timerInterval       = null;
 
-  // =============================================
-  // APPEND MESSAGES
-  // =============================================
-  function appendMessage(role, content, type = 'text', meta = {}) {
-    const container = document.getElementById('chatMessages');
-    const typing    = document.getElementById('typingIndicator');
+// =============================================
+// SUGGESTION INJECT
+// =============================================
+function injectSuggestion() {
+  const input = document.getElementById('messageInput');
+  input.value = '¿Qué me puedes contar sobre el proyecto Residencia Prime?';
+  autoResize(input);
+  sendMessage();
+}
 
-    const wrap = document.createElement('div');
-    wrap.className = `msg ${role}`;
+// =============================================
+// HELPERS
+// =============================================
+function formatTime(d) {
+  return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+}
+function formatDuration(secs) {
+  const s = Math.floor(secs);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+function scrollToBottom() {
+  const msgs = document.getElementById('chatMessages');
+  msgs.scrollTop = msgs.scrollHeight;
+}
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+    .replace(/\n/g, '<br>');
+}
+function formatBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+  return (b / 1048576).toFixed(1) + ' MB';
+}
+function getFileIcon(name) {
+  const ext = (name || '').split('.').pop().toLowerCase();
+  return { pdf:'📄', doc:'📝', docx:'📝', xls:'📊', xlsx:'📊',
+           txt:'📃', png:'🖼', jpg:'🖼', jpeg:'🖼', webp:'🖼',
+           mp3:'🎵', mp4:'🎬', wav:'🎵', webm:'🎵', ogg:'🎵' }[ext] || '📁';
+}
 
-    let bubbleHTML = '';
-
-    if (type === 'text') {
-      bubbleHTML = `<div class="bubble">${escapeHtml(content)}</div>`;
-    } else if (type === 'doc') {
-      const icon = getFileIcon(meta.name || 'archivo');
-      const size = meta.size ? formatBytes(meta.size) : '';
-      bubbleHTML = `
-        <div class="bubble-file">
-          <span class="file-icon">${icon}</span>
-          <div class="file-info">
-            <div class="file-name">${escapeHtml(meta.name || 'archivo')}</div>
-            <div class="file-size">${size}</div>
-          </div>
-        </div>`;
-    } else if (type === 'audio') {
-      const dur  = meta.duration ? formatDuration(meta.duration) : '0:10';
-      const bars = Array.from({ length: 24 }, () => {
-        const h = Math.floor(Math.random() * 18) + 4;
-        return `<div class="waveform-bar" style="height:${h}px"></div>`;
-      }).join('');
-      bubbleHTML = `
-        <div class="bubble-audio">
-          <button class="audio-play-btn" onclick="playAudio(this,'${meta.dataUrl || ''}')">▶</button>
-          <div class="audio-waveform">${bars}</div>
-          <span class="audio-dur">${dur}</span>
-        </div>`;
-    }
-
-    const time = document.createElement('span');
-    time.className = 'msg-time';
-    time.textContent = formatTime(new Date());
-
-    wrap.innerHTML = bubbleHTML;
-    wrap.appendChild(time);
-    container.insertBefore(wrap, typing);
-    scrollToBottom();
-  }
-
-  function appendAgentTyping() {
-    document.getElementById('typingIndicator').classList.add('active');
-    scrollToBottom();
-  }
-  function removeAgentTyping() {
-    document.getElementById('typingIndicator').classList.remove('active');
-  }
-
-  // =============================================
-  // SEND MESSAGE
-  // =============================================
-  async function sendMessage() {
-    const input    = document.getElementById('messageInput');
-    const text     = input.value.trim();
-    const hasFiles = pendingFiles.length > 0;
-
-    if (!text && !hasFiles) return;
-
-    if (text) appendMessage('user', text, 'text');
-    pendingFiles.forEach(f => {
-      if (f.type === 'audio') {
-        appendMessage('user', '', 'audio', { dataUrl: f.dataUrl, duration: f.duration, name: f.name });
-      } else {
-        appendMessage('user', '', 'doc', { name: f.name, size: f.size });
-      }
-    });
-
-    input.value = '';
-    input.style.height = 'auto';
-    clearFilePreview();
-    appendAgentTyping();
-
-    const payload = new FormData();
-    if (text) payload.append('message', text);
-    payload.append('timestamp', new Date().toISOString());
-    pendingFiles.forEach((f, i) => {
-      if (f.file) payload.append(`file_${i}`, f.file, f.name);
-    });
-
-    try {
-      const res = await fetch(WEBHOOK_URL, { method: 'POST', body: payload });
-      let reply = '';
-      const ct  = res.headers.get('content-type') || '';
-
-      if (ct.includes('application/json')) {
-        const data = await res.json();
-        reply = data.output || data.message || data.response || data.text
-               || (Array.isArray(data) && data[0]?.output)
-               || JSON.stringify(data);
-      } else {
-        reply = await res.text();
-      }
-
-      removeAgentTyping();
-      appendMessage('agent', reply || '...', 'text');
-    } catch (err) {
-      removeAgentTyping();
-      appendMessage('agent', `⚠️ No se pudo conectar con el servidor. Revisa la URL del webhook.\n(${err.message})`, 'text');
-    } finally {
-      pendingFiles = [];
-    }
-  }
-
-  // =============================================
-  // FILE HANDLING
-  // =============================================
-  function handleDocFile(e) {
-    Array.from(e.target.files).forEach(file => {
-      pendingFiles.push({ type: 'doc', file, name: file.name, size: file.size });
-    });
-    renderFilePreview();
-    e.target.value = '';
-  }
-
-  function handleAudioFile(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+// =============================================
+// FILE → BASE64
+// =============================================
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = ev => {
-      pendingFiles.push({ type: 'audio', file, name: file.name, size: file.size, dataUrl: ev.target.result });
-      renderFilePreview();
-    };
+    reader.onload  = e => resolve(e.target.result.split(',')[1]);
+    reader.onerror = reject;
     reader.readAsDataURL(file);
-    e.target.value = '';
+  });
+}
+
+// =============================================
+// APPEND MESSAGES
+// =============================================
+function appendMessage(role, content, type = 'text', meta = {}) {
+  const container = document.getElementById('chatMessages');
+  const typing    = document.getElementById('typingIndicator');
+  const wrap      = document.createElement('div');
+  wrap.className  = `msg ${role}`;
+  let bubbleHTML  = '';
+
+  if (type === 'text') {
+    bubbleHTML = `<div class="bubble">${escapeHtml(content)}</div>`;
+} else if (type === 'doc') {
+  if (meta.isImage && meta.dataUrl) {
+    bubbleHTML = `
+      <div style="max-width:260px;border-radius:12px;overflow:hidden;border:1px solid var(--gray-600);">
+        <img src="${meta.dataUrl}" style="width:100%;display:block;cursor:pointer;" onclick="window.open('${meta.dataUrl}','_blank')" />
+      </div>`;
+  } else {
+    const icon = getFileIcon(meta.name || 'archivo');
+    const size = meta.size ? formatBytes(meta.size) : '';
+    bubbleHTML = `
+      <div class="bubble-file">
+        <span class="file-icon">${icon}</span>
+        <div class="file-info">
+          <div class="file-name">${escapeHtml(meta.name || 'archivo')}</div>
+          <div class="file-size">${size}</div>
+        </div>
+      </div>`;
+  }
+  } else if (type === 'audio') {
+    const dur  = meta.duration != null ? formatDuration(meta.duration) : '0:00';
+    const bars = Array.from({ length: 24 }, () => {
+      const h = Math.floor(Math.random() * 18) + 4;
+      return `<div class="waveform-bar" style="height:${h}px"></div>`;
+    }).join('');
+    bubbleHTML = `
+      <div class="bubble-audio">
+        <button class="audio-play-btn" onclick="playAudio(this,'${meta.dataUrl || ''}')">▶</button>
+        <div class="audio-waveform">${bars}</div>
+        <span class="audio-dur">${dur}</span>
+      </div>`;
   }
 
-  function renderFilePreview() {
-    const strip = document.getElementById('filePreviewStrip');
-    strip.innerHTML = '';
-    if (!pendingFiles.length) { strip.classList.remove('active'); return; }
-    strip.classList.add('active');
-    pendingFiles.forEach((f, i) => {
-      const chip = document.createElement('div');
-      chip.className = 'file-chip';
-      const icon = f.type === 'audio' ? '🎵' : getFileIcon(f.name);
-      chip.innerHTML = `<span>${icon}</span><span>${escapeHtml(f.name)}</span><span class="file-chip-remove" onclick="removeFile(${i})">✕</span>`;
-      strip.appendChild(chip);
+  const time      = document.createElement('span');
+  time.className  = 'msg-time';
+  time.textContent = formatTime(new Date());
+  wrap.innerHTML  = bubbleHTML;
+  wrap.appendChild(time);
+  container.insertBefore(wrap, typing);
+  scrollToBottom();
+}
+
+function appendAgentTyping()  { document.getElementById('typingIndicator').classList.add('active');    scrollToBottom(); }
+function removeAgentTyping()  { document.getElementById('typingIndicator').classList.remove('active'); }
+
+// =============================================
+// SEND MESSAGE (texto + archivos 📎)
+// =============================================
+async function sendMessage() {
+  const input    = document.getElementById('messageInput');
+  const text     = input.value.trim();
+  const hasFiles = pendingFiles.length > 0;
+  if (!text && !hasFiles) return;
+
+  if (text) appendMessage('user', text, 'text');
+  const snapshot = [...pendingFiles];
+  snapshot.forEach(f => {
+    if (f.type === 'audio') appendMessage('user', '', 'audio', { dataUrl: f.dataUrl, duration: f.duration, name: f.name });
+    else                    appendMessage('user', '', 'doc',   { name: f.name, size: f.size });
+  });
+
+  input.value = '';
+  input.style.height = 'auto';
+  clearFilePreview();
+  await _doFetch(text, snapshot);
+}
+
+// =============================================
+// 🎤  START RECORDING
+// =============================================
+async function startRecording() {
+  try {
+    currentStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    audioCtx     = new (window.AudioContext || window.webkitAudioContext)();
+    analyserNode = audioCtx.createAnalyser();
+    analyserNode.fftSize = 64;
+    analyserNode.smoothingTimeConstant = 0.75;
+    const source = audioCtx.createMediaStreamSource(currentStream);
+    source.connect(analyserNode);
+
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                   ? 'audio/webm;codecs=opus' : 'audio/webm';
+    mediaRecorder = new MediaRecorder(currentStream, { mimeType });
+    audioChunks   = [];
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.start(100);
+
+    isRecording       = true;
+    recordingStartTime = Date.now();
+
+    document.getElementById('inputRow').style.display = 'none';
+    document.getElementById('filePreviewStrip').classList.remove('active');
+    document.getElementById('recordingRow').classList.add('active');
+
+    _initVizBars();
+    _drawViz();
+
+    document.getElementById('recordingTimer').textContent = '0:00';
+    timerInterval = setInterval(() => {
+      const elapsed = (Date.now() - recordingStartTime) / 1000;
+      document.getElementById('recordingTimer').textContent = formatDuration(elapsed);
+    }, 500);
+
+  } catch (err) {
+    alert('No se pudo acceder al micrófono: ' + err.message);
+  }
+}
+
+function _initVizBars() {
+  const container = document.getElementById('vizBars');
+  container.innerHTML = '';
+  for (let i = 0; i < 28; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'viz-bar';
+    container.appendChild(bar);
+  }
+}
+
+function _drawViz() {
+  if (!isRecording || !analyserNode) return;
+  animFrameId = requestAnimationFrame(_drawViz);
+  const bars      = document.querySelectorAll('.viz-bar');
+  const bufLen    = analyserNode.frequencyBinCount;
+  const dataArray = new Uint8Array(bufLen);
+  analyserNode.getByteFrequencyData(dataArray);
+  const step = Math.max(1, Math.floor(bufLen / bars.length));
+  bars.forEach((bar, i) => {
+    const value = dataArray[Math.min(i * step, bufLen - 1)];
+    const h     = Math.max(3, Math.round((value / 255) * 24));
+    bar.style.height  = h + 'px';
+    bar.style.opacity = (0.35 + (value / 255) * 0.65).toFixed(2);
+  });
+}
+
+// =============================================
+// ✕  CANCEL RECORDING
+// =============================================
+function cancelRecording() {
+  _stopRecordingState();
+  if (mediaRecorder) {
+    mediaRecorder.onstop = () => {
+      if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+      _hideRecordingUI();
+    };
+  } else {
+    _hideRecordingUI();
+  }
+}
+
+// =============================================
+// ➤  STOP + SEND AUDIO
+// =============================================
+function sendFromRecording() {
+  if (!isRecording || !mediaRecorder) return;
+  const duration = (Date.now() - recordingStartTime) / 1000;
+  _stopRecordingState();
+
+  mediaRecorder.onstop = async () => {
+    const mimeType = mediaRecorder.mimeType || 'audio/webm';
+    const blob     = new Blob(audioChunks, { type: mimeType });
+    const name     = `audio_${Date.now()}.webm`;
+    const file     = new File([blob], name, { type: mimeType });
+
+    const dataUrl = await new Promise((res, rej) => {
+      const reader = new FileReader();
+      reader.onload  = e => res(e.target.result);
+      reader.onerror = rej;
+      reader.readAsDataURL(blob);
     });
-  }
 
-  function removeFile(i) { pendingFiles.splice(i, 1); renderFilePreview(); }
-  function clearFilePreview() { pendingFiles = []; renderFilePreview(); }
+    if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+    _hideRecordingUI();
 
-  // =============================================
-  // AUDIO RECORDING
-  // =============================================
-  async function toggleRecording() {
-    const btn = document.getElementById('audioBtn');
-    if (!isRecording) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder  = new MediaRecorder(stream);
-        audioChunks    = [];
-        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(audioChunks, { type: 'audio/webm' });
-          const name = `audio_${Date.now()}.webm`;
-          const file = new File([blob], name, { type: 'audio/webm' });
-          const reader = new FileReader();
-          reader.onload = ev => {
-            pendingFiles.push({ type: 'audio', file, name, size: blob.size, dataUrl: ev.target.result });
-            renderFilePreview();
-          };
-          reader.readAsDataURL(blob);
-          stream.getTracks().forEach(t => t.stop());
-        };
-        mediaRecorder.start();
-        isRecording = true;
-        btn.classList.add('recording');
-        btn.title       = 'Detener grabación';
-        btn.textContent = '⏹';
-      } catch (err) {
-        alert('No se pudo acceder al micrófono: ' + err.message);
+    appendMessage('user', '', 'audio', { dataUrl, duration, name });
+    await _doFetch('', [{ type: 'audio', file, name, size: blob.size, dataUrl, duration }]);
+  };
+}
+
+function _stopRecordingState() {
+  isRecording = false;
+  clearInterval(timerInterval);
+  cancelAnimationFrame(animFrameId);
+  if (audioCtx)  { audioCtx.close(); audioCtx = null; }
+  analyserNode = null;
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+}
+
+function _hideRecordingUI() {
+  document.getElementById('recordingRow').classList.remove('active');
+  document.getElementById('inputRow').style.display = 'flex';
+  document.getElementById('recordingTimer').textContent = '0:00';
+  document.getElementById('vizBars').innerHTML = '';
+}
+
+// =============================================
+// 📎  DOC / IMAGE FILES
+// =============================================
+function handleDocFile(e) {
+  Array.from(e.target.files).forEach(file => {
+    const isImage = file.type.startsWith('image/');
+    if (isImage) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        pendingFiles.push({ type: 'doc', file, name: file.name, size: file.size, dataUrl: ev.target.result, isImage: true });
+        renderFilePreview();
+      };
+      reader.readAsDataURL(file);
+    } else {
+      pendingFiles.push({ type: 'doc', file, name: file.name, size: file.size });
+      renderFilePreview();
+    }
+  });
+  e.target.value = '';
+}
+
+function renderFilePreview() {
+  const strip = document.getElementById('filePreviewStrip');
+  strip.innerHTML = '';
+  if (!pendingFiles.length) { strip.classList.remove('active'); return; }
+  strip.classList.add('active');
+  pendingFiles.forEach((f, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'file-chip';
+    const icon = f.type === 'audio' ? '🎵' : getFileIcon(f.name);
+    chip.innerHTML = `<span>${icon}</span><span>${escapeHtml(f.name)}</span><span class="file-chip-remove" onclick="removeFile(${i})">✕</span>`;
+    strip.appendChild(chip);
+  });
+}
+function removeFile(i)      { pendingFiles.splice(i, 1); renderFilePreview(); }
+function clearFilePreview() { pendingFiles = []; renderFilePreview(); }
+
+// =============================================
+// 🔊  PLAY AUDIO
+// =============================================
+function playAudio(btn, dataUrl) {
+  if (!dataUrl) return;
+  const audio = new Audio(dataUrl);
+  audio.play();
+  btn.textContent = '⏸';
+  audio.onended = () => { btn.textContent = '▶'; };
+}
+
+// =============================================
+// 📡  _doFetch — ENVÍO AL WEBHOOK (JSON + base64)
+// =============================================
+async function _doFetch(text, files) {
+  const filesPayload = await Promise.all((files || []).map(async f => {
+    let data;
+    if (f.dataUrl) {
+      data = f.dataUrl.split(',')[1];
+    } else {
+      data = await fileToBase64(f.file);
+    }
+    return {
+      name:     f.name,
+      mimeType: (f.file && f.file.type) ? f.file.type : 'application/octet-stream',
+      size:     f.size,
+      data
+    };
+  }));
+
+  const payload = {
+    sessionId: getSessionId(),
+    messageId: crypto.randomUUID(),
+    message:   text || '',
+    timestamp: new Date().toISOString(),
+    files:     filesPayload
+  };
+
+  try {
+    const res = await fetch(WEBHOOK_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload)
+    });
+
+    const ct = res.headers.get('content-type') || '';
+    const rawText = await res.text();
+
+    // n8n aún en buffer → respuesta vacía, ignorar silenciosamente
+    if (!rawText || !rawText.trim()) return;
+
+    if (ct.includes('application/json')) {
+      const data = JSON.parse(rawText);
+      if (data.chunks && Array.isArray(data.chunks) && data.chunks.length > 0) {
+        appendAgentTyping();
+        data.chunks.forEach((chunk, index) => {
+          setTimeout(() => {
+            appendAgentTyping();
+            setTimeout(() => {
+              removeAgentTyping();
+              appendMessage('agent', chunk, 'text');
+            }, 800);
+          }, index * 2000);
+        });
+
+        // ← PEGAR AQUÍ, entre la línea 1230 y 1231
+        if (data.files && Array.isArray(data.files) && data.files.length > 0) {
+          const totalDelay = data.chunks.length * 2000 + 1000;
+          data.files.forEach(f => {
+            setTimeout(() => {
+              const container = document.getElementById('chatMessages');
+              const typing    = document.getElementById('typingIndicator');
+              const wrap      = document.createElement('div');
+              wrap.className  = 'msg agent';
+              const time      = document.createElement('span');
+              time.className  = 'msg-time';
+              time.textContent = formatTime(new Date());
+
+              const isImage = f.mimeType && f.mimeType.startsWith('image/');
+              const isVideo = f.mimeType && f.mimeType.startsWith('video/');
+              const isPdf   = f.mimeType === 'application/pdf';
+
+              if (isImage && f.url) {
+                wrap.innerHTML = `
+                  <div style="max-width:260px;border-radius:12px;overflow:hidden;border:1px solid var(--gray-600);">
+                    <img src="${f.url}" style="width:100%;display:block;cursor:pointer;"
+                      onclick="window.open('${f.url}','_blank')"
+                      onerror="this.parentElement.innerHTML='<div style=padding:12px;color:#888;font-size:0.8rem>⚠️ No se pudo cargar la imagen</div>'" />
+                    ${f.name ? `<div style="padding:6px 10px;font-size:0.75rem;color:var(--gray-400);">${escapeHtml(f.name)}</div>` : ''}
+                  </div>`;
+              } else if (isVideo && f.url) {
+                wrap.innerHTML = `
+                  <div style="max-width:320px;border-radius:12px;overflow:hidden;border:1px solid var(--gray-600);">
+                    <iframe src="${f.url}" style="width:100%;height:180px;display:block;border:none;" allow="autoplay" allowfullscreen></iframe>
+                    ${f.name ? `<div style="padding:6px 10px;font-size:0.75rem;color:var(--gray-400);">${escapeHtml(f.name)}</div>` : ''}
+                  </div>`;
+              } else if (isPdf && f.downloadUrl) {
+                wrap.innerHTML = `
+                  <div style="max-width:280px;border-radius:12px;overflow:hidden;border:1px solid var(--gray-600);background:var(--gray-800);">
+                    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;">
+                      <span style="font-size:28px;flex-shrink:0;">📄</span>
+                      <div style="flex:1;overflow:hidden;">
+                        <div style="font-size:0.82rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(f.name || 'Documento.pdf')}</div>
+                        <div style="font-size:0.7rem;color:var(--gray-400);margin-top:2px;">PDF</div>
+                      </div>
+                    </div>
+                    <a href="${f.downloadUrl}" target="_blank"
+                      style="display:block;padding:9px;text-align:center;font-size:0.78rem;color:var(--gray-300);text-decoration:none;border-top:1px solid var(--gray-700);">
+                      ⬇️ Descargar
+                    </a>
+                  </div>`;
+              }
+
+              if (wrap.innerHTML) {
+                wrap.appendChild(time);
+                container.insertBefore(wrap, typing);
+                scrollToBottom();
+              }
+            }, totalDelay);
+          });
+        }
+        
+      } else {
+        const reply = data.output || data.message || data.response || data.text
+                    || (Array.isArray(data) && data[0]?.output)
+                    || JSON.stringify(data);
+        appendAgentTyping();
+        setTimeout(() => {
+          removeAgentTyping();
+          appendMessage('agent', reply || '...', 'text');
+        }, 800);
       }
     } else {
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-      isRecording = false;
-      btn.classList.remove('recording');
-      btn.title       = 'Grabar audio';
-      btn.textContent = '🎤';
+      appendAgentTyping();
+      setTimeout(() => {
+        removeAgentTyping();
+        appendMessage('agent', rawText || '...', 'text');
+      }, 800);
     }
+  } catch (err) {
+    removeAgentTyping();
+    appendMessage('agent', `⚠️ No se pudo conectar con el servidor.\n(${err.message})`, 'text');
   }
-
-  // =============================================
-  // PLAY AUDIO
-  // =============================================
-  function playAudio(btn, dataUrl) {
-    if (!dataUrl) return;
-    const audio = new Audio(dataUrl);
-    audio.play();
-    btn.textContent = '⏸';
-    audio.onended = () => { btn.textContent = '▶'; };
-  }
-
-  // =============================================
-  // UTILS
-  // =============================================
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
-      .replace(/\n/g,'<br>');
-  }
-  function formatBytes(b) {
-    if (b < 1024) return b + ' B';
-    if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
-    return (b/1048576).toFixed(1) + ' MB';
-  }
-  function formatDuration(s) {
-    return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
-  }
-  function getFileIcon(name) {
-    const ext = name.split('.').pop().toLowerCase();
-    return { pdf:'📄', doc:'📝', docx:'📝', xls:'📊', xlsx:'📊',
-             txt:'📃', png:'🖼', jpg:'🖼', jpeg:'🖼',
-             mp3:'🎵', mp4:'🎬', wav:'🎵', webm:'🎵' }[ext] || '📁';
-  }
+}
 </script>
 </body>
 </html>
