@@ -177,6 +177,97 @@
       margin: 0 auto;
       animation: fadeUp 0.8s 0.3s ease both;
     }
+      
+    /* =============================================
+       ✨ FEATURES SECTION — NUEVO (solo se agregó esto)
+    ============================================= */
+    .features-section {
+      width: 100%;
+      max-width: 680px;
+      margin-bottom: 28px;
+      animation: fadeUp 0.8s 0.55s ease both;
+    }
+ 
+    .features-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--gray-600);
+      text-align: center;
+      margin-bottom: 14px;
+    }
+ 
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+ 
+    .feature-item {
+      background: var(--gray-900);
+      border: 1px solid var(--gray-700);
+      border-radius: 12px;
+      padding: 14px 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s, background 0.25s;
+    }
+ 
+    .feature-item::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    }
+ 
+    .feature-item:hover {
+      border-color: var(--gray-600);
+      background: var(--gray-800);
+    }
+ 
+    .feature-icon {
+      font-size: 18px;
+      line-height: 1;
+      opacity: 0.85;
+    }
+ 
+    .feature-title {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--gray-200);
+      line-height: 1.3;
+    }
+ 
+    .feature-desc {
+      font-size: 0.7rem;
+      color: var(--gray-400);
+      line-height: 1.5;
+      font-weight: 300;
+    }
+ 
+    /* stagger animation */
+    .feature-item:nth-child(1) { animation: featureIn 0.5s 0.6s ease both; }
+    .feature-item:nth-child(2) { animation: featureIn 0.5s 0.7s ease both; }
+    .feature-item:nth-child(3) { animation: featureIn 0.5s 0.8s ease both; }
+    .feature-item:nth-child(4) { animation: featureIn 0.5s 0.9s ease both; }
+    .feature-item:nth-child(5) { animation: featureIn 0.5s 1.0s ease both; }
+    .feature-item:nth-child(6) { animation: featureIn 0.5s 1.1s ease both; }
+ 
+    @keyframes featureIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+ 
+    @media (max-width: 480px) {
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    /* =============================================
+       FIN FEATURES SECTION
+    ============================================= */
 
     /* =============================================
        SUGGESTION CARD
