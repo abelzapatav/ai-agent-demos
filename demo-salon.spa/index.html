@@ -838,33 +838,33 @@
       </div>
  
       <div class="feature-item">
-        <span class="feature-icon">🧠</span>
-        <span class="feature-title">Memoria de conversación</span>
-        <span class="feature-desc">Recuerda el contexto de cada cliente a lo largo de toda la conversación.</span>
+        <span class="feature-icon">📸</span>
+        <span class="feature-title">Fotos de servicios</span>
+        <span class="feature-desc">Muestra cada tratamiento antes de agendar, para que el cliente llegue seguro de lo que quiere.</span>
       </div>
  
       <div class="feature-item">
-        <span class="feature-icon">📋</span>
-        <span class="feature-title">Catálogo inteligente</span>
-        <span class="feature-desc">Muestra productos, precios y disponibilidad en tiempo real desde tu base de datos.</span>
+        <span class="feature-icon">💅</span>
+        <span class="feature-title">Gestión de citas</span>
+        <span class="feature-desc">Detalla duración y precio de cada servicio al instante, sin llamadas ni mensajes sin respuesta.</span>
       </div>
  
       <div class="feature-item">
-        <span class="feature-icon">🎤</span>
+        <span class="feature-icon">📅</span>
         <span class="feature-title">Voz y archivos</span>
-        <span class="feature-desc">Recibe mensajes de voz, imágenes y documentos directamente en el chat.</span>
+        <span class="feature-desc">Agenda, reprograma o cancela citas en segundos, directamente desde el chat sin llamadas ni esperas.</span>
       </div>
  
       <div class="feature-item">
-        <span class="feature-icon">🔗</span>
-        <span class="feature-title">Integración total</span>
-        <span class="feature-desc">Conecta con WhatsApp, CRM, Google Sheets y cualquier plataforma que uses.</span>
+        <span class="feature-icon">🔔</span>
+        <span class="feature-title">Recordatorios automáticos</span>
+        <span class="feature-desc">Envía recordatorios antes de cada cita para reducir ausencias y mantener la agenda siempre llena.</span>
       </div>
  
       <div class="feature-item">
-        <span class="feature-icon">📊</span>
-        <span class="feature-title">Cotizaciones automáticas</span>
-        <span class="feature-desc">Genera y envía cotizaciones formales al instante sin intervención humana.</span>
+        <span class="feature-icon">⭐</span>
+        <span class="feature-title">Reseñas y seguimiento</span>
+        <span class="feature-desc">Después de cada visita recuerda al cliente dejar su reseña en Google, construyendo tu reputación en piloto automático.</span>
       </div>
  
     </div>
@@ -898,7 +898,7 @@
     <span class="suggestion-icon">💅</span>
     <div class="suggestion-body">
       <div class="suggestion-label">👆 Toca aquí para comenzar</div>
-      <div class="suggestion-text">¿Cuáles son los <strong>servicios que ofrecen</strong> y cuáles son sus precios?</div>
+      <div class="suggestion-text">¿Cuáles son los <strong>servicios que ofrecen</strong>?</div>
     </div>
     <span class="suggestion-arrow">→</span>
   </div>
@@ -909,7 +909,7 @@
     <div class="chat-header">
       <div class="chat-avatar">💅</div>
       <div class="chat-header-info">
-        <div class="chat-header-name">Asistente de Belleza IA</div>
+        <div class="chat-header-name">Maqui Llando · Asesora de Belleza</div>
         <div class="chat-header-status">
           <span class="status-dot"></span>
           En línea · disponible ahora
@@ -982,7 +982,7 @@
 // =============================================
 // ⚙️  WEBHOOK CONFIGURATION
 // =============================================
-const WEBHOOK_URL = "https://wwebhookw.omegaconsultingai.com/webhook/demo-inmo-web";
+const WEBHOOK_URL = "https://wwebhookw.omegaconsultingai.com/webhook/demo_web_belleza";
 
 // =============================================
 // 🔑  SESSION ID  (UUID v4 · persiste en localStorage)
@@ -1023,7 +1023,7 @@ let timerInterval       = null;
 // =============================================
 function injectSuggestion() {
   const input = document.getElementById('messageInput');
-  input.value = '¿Qué me puedes contar sobre el proyecto Residencia Prime?';
+  input.value = '¿Cuáles son los servicios que ofrecen?';
   autoResize(input);
   sendMessage();
 }
