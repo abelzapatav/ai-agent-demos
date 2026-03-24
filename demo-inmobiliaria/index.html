@@ -838,33 +838,33 @@
       </div>
  
       <div class="feature-item">
-        <span class="feature-icon">🧠</span>
-        <span class="feature-title">Memoria de conversación</span>
-        <span class="feature-desc">Recuerda el contexto de cada cliente a lo largo de toda la conversación.</span>
+        <span class="feature-icon">🏗️</span>
+        <span class="feature-title">Información de proyectos</span>
+        <span class="feature-desc">Responde al instante sobre ubicación, precios, metrajes y disponibilidad de cada proyecto.</span>
       </div>
  
       <div class="feature-item">
-        <span class="feature-icon">📋</span>
-        <span class="feature-title">Catálogo inteligente</span>
-        <span class="feature-desc">Muestra productos, precios y disponibilidad en tiempo real desde tu base de datos.</span>
+        <span class="feature-icon">📸</span>
+        <span class="feature-title">Fotos y videos en el chat</span>
+        <span class="feature-desc">Envía material visual de los proyectos directamente en la conversación, sin salir del chat.</span>
       </div>
  
       <div class="feature-item">
-        <span class="feature-icon">🎤</span>
-        <span class="feature-title">Voz y archivos</span>
-        <span class="feature-desc">Recibe mensajes de voz, imágenes y documentos directamente en el chat.</span>
+        <span class="feature-icon">📅</span>
+        <span class="feature-title">Reserva de visitas</span>
+        <span class="feature-desc">Agenda citas directamente en el calendario del equipo, sin llamadas ni esperas.</span>
       </div>
  
       <div class="feature-item">
-        <span class="feature-icon">🔗</span>
-        <span class="feature-title">Integración total</span>
-        <span class="feature-desc">Conecta con WhatsApp, CRM, Google Sheets y cualquier plataforma que uses.</span>
+        <span class="feature-icon">🔔</span>
+        <span class="feature-title">Seguimientos automáticos</span>
+        <span class="feature-desc">Contacta a cada interesado en el momento justo para mantener vivo el interés y cerrar más ventas.</span>
       </div>
  
       <div class="feature-item">
-        <span class="feature-icon">📊</span>
-        <span class="feature-title">Cotizaciones automáticas</span>
-        <span class="feature-desc">Genera y envía cotizaciones formales al instante sin intervención humana.</span>
+        <span class="feature-icon">👤</span>
+        <span class="feature-title">Transferencia a un asesor</span>
+        <span class="feature-desc">Detecta cuándo el cliente necesita atención humana y transfiere la conversación al instante.</span>
       </div>
  
     </div>
@@ -898,7 +898,7 @@
     <span class="suggestion-icon">🏠</span>
     <div class="suggestion-body">
       <div class="suggestion-label">👆 Toca aquí para comenzar</div>
-      <div class="suggestion-text">¿Qué me puedes contar sobre el proyecto <strong>Residencia Prime</strong>?</div>
+      <div class="suggestion-text">Hola, quisiera información del proyecto <strong>Residencia Prime</strong></div>
     </div>
     <span class="suggestion-arrow">→</span>
   </div>
@@ -909,7 +909,7 @@
     <div class="chat-header">
       <div class="chat-avatar">🏠</div>
       <div class="chat-header-info">
-        <div class="chat-header-name">Asistente Inmobiliario IA</div>
+        <div class="chat-header-name">Armando Casas · Asesor Inmobiliario</div>
         <div class="chat-header-status">
           <span class="status-dot"></span>
           En línea · disponible ahora
@@ -1023,7 +1023,7 @@ let timerInterval       = null;
 // =============================================
 function injectSuggestion() {
   const input = document.getElementById('messageInput');
-  input.value = '¿Qué me puedes contar sobre el proyecto Residencia Prime?';
+  input.value = 'Hola, quisiera información del proyecto Residencia Prime';
   autoResize(input);
   sendMessage();
 }
